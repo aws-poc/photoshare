@@ -1,19 +1,38 @@
 buildscript {
 	ext {
+		flywayVersion = '5.1.4'
+		h2Version = '1.4+'
+		pmdVersion = '6.1.0'
 		springBootVersion = '2.0.5.RELEASE'
+        logstashEncoderVersion = '5.0'
+        mysqlVersion = '6.0.6'
+        lombokVersion = '1.18.2'
+        hibernateValidatorVersion = '6.0.8.Final'
+        springfoxVersion = '2.7.0'
+        thymeleafVersion = '3.0.9.RELEASE'
+        tomcatVersion = '9.0.5'
+		jsonwebtokenVersion = '0.9.0'
+		restAssuredVersion = '3.1.1'
+		awsSdkVersion = '1.11.419'
+        s3MockVersion = '0.2.4'
 	}
-	repositories {
+    repositories {
 		mavenCentral()
 	}
 	dependencies {
+        classpath("org.flywaydb:flyway-gradle-plugin:${flywayVersion}")
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
 	}
 }
+
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
+apply plugin: 'org.flywaydb.flyway'
+apply plugin: 'pmd'
+apply plugin: 'findbugs'
 
 group = 'com.aws'
 version = '0.0.1-SNAPSHOT'
@@ -23,11 +42,85 @@ repositories {
 	mavenCentral()
 }
 
-
 dependencies {
-	compile('org.springframework.boot:spring-boot-starter-data-jpa')
-	compile('org.springframework.boot:spring-boot-starter-security')
-	compile('org.springframework.boot:spring-boot-starter-web')
-	testCompile('org.springframework.boot:spring-boot-starter-test')
-	testCompile('org.springframework.security:spring-security-test')
+    annotationProcessor([
+            "org.hibernate.validator:hibernate-validator-annotation-processor:${hibernateValidatorVersion}",
+			"org.projectlombok:lombok:${lombokVersion}"
+    ])
+	compile([
+        "org.projectlombok:lombok:${lombokVersion}",
+		"org.springframework.boot:spring-boot-starter-data-jpa",
+		"org.springframework.boot:spring-boot-starter-web",
+        "io.springfox:springfox-swagger2:${springfoxVersion}",
+        "io.springfox:springfox-swagger-ui:${springfoxVersion}",
+        "org.apache.tomcat:tomcat-juli:${tomcatVersion}",
+		"org.flywaydb:flyway-core:${flywayVersion}",
+		"io.jsonwebtoken:jjwt:${jsonwebtokenVersion}",
+        "net.logstash.logback:logstash-logback-encoder:${logstashEncoderVersion}",
+        "com.amazonaws:aws-java-sdk-s3:${awsSdkVersion}"
+    ])
+    runtime "mysql:mysql-connector-java:${mysqlVersion}"
+	testCompile([
+        "org.springframework.boot:spring-boot-starter-test",
+        "org.springframework.security:spring-security-test",
+        "com.h2database:h2:${h2Version}",
+		"io.rest-assured:rest-assured:${restAssuredVersion}",
+        "io.findify:s3mock_2.12:${s3MockVersion}"
+	])
+
+	pmd("net.sourceforge.pmd:pmd-core:${pmdVersion}",
+			"net.sourceforge.pmd:pmd-java:${pmdVersion}")
+}
+
+sourceSets {
+	generated.java.srcDirs = ['build/generated']
+	main {
+		java { srcDir 'src/main/java' }
+		resources { srcDir 'src/main/resources' }
+	}
+	test {
+		java { srcDir 'src/test/java' }
+		resources { srcDir 'src/test/resources' }
+	}
+	intTest {
+		java.srcDir file('src/intTest/java')
+		resources.srcDir file('src/intTest/resources')
+		compileClasspath += sourceSets.main.output + configurations.testRuntime
+		runtimeClasspath += output + compileClasspath
+	}
+}
+
+springBoot {
+	mainClassName = "com.aws.photosharing.Application"
+}
+
+bootRun {
+	systemProperty 'spring.profiles.active', System.properties['spring.profiles.active']
+}
+
+// Activate Specific Code Quality Enforcement Checks
+pmd {
+    ignoreFailures = true  // Evaluation must pass
+    pmdTest.enabled = true // Enable quality checks on unit test code
+    ruleSets = [
+            'java-basic',
+            'java-braces',
+            'java-clone',
+            'java-codesize',
+            'java-design',
+            'java-empty',
+            'java-finalizers',
+            'java-optimizations',
+            'java-strings',
+            'java-sunsecure',
+            'java-unnecessary',
+            'java-unusedcode'
+    ]
+}
+
+findbugs {
+    ignoreFailures = false
+    sourceSets = [sourceSets.main, sourceSets.test, sourceSets.intTest]
+    reportLevel = "low"
+    effort = "max"
 }

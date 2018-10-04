@@ -1,0 +1,61 @@
+spring:
+  profiles:
+    active: test
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+    generate-ddl: false
+    database: mysql
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:localhost}/ps?useSSL=false&requireSSL=false&verifyServerCertificate=false&serverTimezone=UTC
+    username: ps_app
+    tomcat:
+      max-active: 5
+      max-idle: 5
+      min-idle: 2
+      initial-size: 2
+      remove-abandoned: false
+      connection-properties: defaultRowPrefetch=1000;defaultBatchValue=1000
+      max-wait: 10000
+      test-on-borrow: true
+
+  server:
+    port: 8080
+    compression:
+      enabled: true
+      mimeTypes: application/json
+      minResponseSize: 2048
+
+  flyway:
+    enabled: true
+    url: jdbc:mysql://${DB_HOST:localhost}/ps?useSSL=false&requireSSL=false&verifyServerCertificate=false&serverTimezone=UTC
+    user: ps_dba
+    baseline-on-migrate: false
+
+---
+spring:
+  profiles: dev
+  datasource:
+    password: password
+  flyway:
+    password: password
+---
+
+spring:
+  profiles: test
+  jpa:
+    hibernate:
+      ddl-auto: update
+  h2:
+    console:
+      enabled: true
+  datasource:
+    driver-class-name: org.h2.Driver
+    platform: h2
+    url: "jdbc:h2:mem:ps;MODE=MySQL;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false;"
+    username: ps
+    password:
+  flyway:
+    enabled: false

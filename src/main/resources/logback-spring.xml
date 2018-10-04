@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <springProfile name="dev, test, mock">
+        <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+    </springProfile>
+
+    <!-- Main logstash config -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeCallerData>true</includeCallerData>
+            <fieldNames>
+                <callerClass>class</callerClass>
+                <callerMethod>method</callerMethod>
+                <callerFile>file</callerFile>
+                <callerLine>line</callerLine>
+                <logger>logger</logger>
+                <message>description</message>
+                <thread>thread</thread>
+                <stackTrace>exception_obj.stacktrace</stackTrace>
+            </fieldNames>
+            <customFields>
+                {
+                "application": "photoshare"
+                }
+            </customFields>
+            <providers>
+                <timestamp/>
+                <logLevel/>
+                <loggerName/>
+                <threadName/>
+                <message/>
+                <context/>
+                <mdc/>
+                <logstashMarkers/>
+                <stackTrace>
+                    <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                        <maxDepthPerThrowable>30</maxDepthPerThrowable>
+                        <maxLength>4096</maxLength>
+                        <shortenedClassNameLength>20</shortenedClassNameLength>
+                        <rootCauseFirst>false</rootCauseFirst>
+                    </throwableConverter>
+                </stackTrace>
+            </providers>
+        </encoder>
+    </appender>
+
+    <!-- Root logger -->
+    <root level="INFO">
+        <springProfile name="dev, test, mock">
+            <appender-ref ref="CONSOLE"/>
+        </springProfile>
+        <springProfile name="qa, prod">
+            <appender-ref ref="STDOUT"/>
+        </springProfile>
+    </root>
+</configuration>
